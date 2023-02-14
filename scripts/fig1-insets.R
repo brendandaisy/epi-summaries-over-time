@@ -132,12 +132,13 @@ theme_dens <- theme_bw() +
 plot_dens <- map2(
     true_vals$var, 
     list(
-        c(0.05, 0.85), c(0.3, 1.25), c(0.1, 0.99), c(-Inf, Inf), 
+        c(0.05, 0.85), c(0.3, 1.5), c(0.1, 0.99), c(-Inf, Inf), 
         c(-Inf, Inf), c(-Inf, Inf), c(-Inf, Inf), c(-Inf, Inf)
     ),
     density_plot_var
 )
 
+# adjust the axis breaks for some of the plots
 plot_dens[[1]] <- plot_dens[[1]] + scale_x_continuous(breaks=c(0.1, 0.45, 0.8))
 plot_dens[[3]] <- plot_dens[[3]] + scale_x_continuous(breaks=c(0.1, 0.5, 0.9))
 plot_dens[[5]] <- plot_dens[[5]] + scale_x_continuous(breaks=c(0, 0.5, 1))
