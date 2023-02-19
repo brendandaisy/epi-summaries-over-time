@@ -1,8 +1,9 @@
-## exp1-pi-over-time.jl
-## run the experiment shown in main panel of Figure 1, where PI is assessed with 
-## increasing observation window
+#====
+pi-over-time.jl
+Run the experiment shown in main panel of Figure 1B, where PI is assessed with an increasing observation window
+====#
 
-using DiffEqInformationTheory
+using MarginalDivergence
 using ConditionalTransform
 using Distributions, MonteCarloMeasurements
 using NamedTupleTools
@@ -26,6 +27,9 @@ function sir_from_samples(varname, M)
     nparticles(ret.S₀) > M ? resample(ret, M) : ret
 end
 
+"""
+Container to hold the conditions for this experiment
+"""
 struct Exper1Config
     θtrue
     θprior
@@ -36,6 +40,11 @@ struct Exper1Config
     y
 end
 
+"""
+Create an `Exper1Config` by simulating necessary SIR processes based on the input `θtrue`, `θprior`, and `obs_mod`.
+
+The result is to be based to `ident_over_tspan`.
+"""
 function exper1_setup(θtrue, θprior, obs_mod; M=60_000)
     # setup model and simulate infections from prior:
     lat_mod = SIRModel{Float32}(
@@ -90,5 +99,5 @@ end
 obs_mod = PoissonTests(1000)
 exper_config = exper1_setup(θtrue, θprior, obs_mod; M=60_000)
 
-res = ident_over_tspan(exper_config; N=10)
+res = ident_over_tspan(exper_config; N=3000)
 CSV.write("data/res-pi-over-time.csv", DataFrame(res))

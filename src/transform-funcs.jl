@@ -1,8 +1,16 @@
+#====
+transform-funcs.jl
+transformation functions for the 5 summary statistics used in the paper
+====#
+
 using LambertW
 using Optim
 using ForwardDiff
 using OrdinaryDiffEq
 
+"""
+A `Dict` of functions for each transformation, an inverse, and derivative of the inverse
+"""
 function get_var_transforms()
     Dict(
         "rep-number" => [rnot, inv_rnot, d_inv_rnot],
@@ -13,12 +21,14 @@ function get_var_transforms()
     )
 end
 
+#= Basic reproductive number =#
 rnot(α, β) = β/α
 inv_rnot(α, R) = α*R
 d_inv_rnot(α, R) = α
 
 reff(α, β, S₀) = β*S₀/α
 
+#= Outbreak size =#
 function outbreak_size(α, β, S₀; I₀=0.01)
     sol = solve(SIRModel{Float64}(;stop=10_000, α, β, S₀, I₀); save_idxs=1)
     S₀ + I₀ - last(sol.u)
@@ -35,6 +45,7 @@ function d_inv_outbreak_size(α, S₀, size; I₀=0.01)
     α / size * (1 / size * log(e1/S₀) + 1/e1)
 end
 
+#= Peak proportion of infectious individuals =#
 function max_inf(α, β, S₀; I₀=0.01)
     if reff(α, β, S₀) <= 1
         return I₀
@@ -55,10 +66,12 @@ function d_inv_max_inf(α, β, imax; I₀=0.01)
     1 / (1 - B*exp(lambertw(-B, -1)))
 end
 
+#= Growth rate =#
 growth_rate(α, β, S₀) = β*S₀ - α
 inv_growth_rate(β, S₀, grate) = β*S₀ - grate
 d_inv_growth_rate(β, S₀, grate) = 1
 
+#= Time of peak infections (requires implicit solutions for all three functions) =#
 function peak_timing(α, β, S₀)
     if reff(α, β, S₀) <= 1
         return 0

@@ -1,8 +1,10 @@
-## gain-trueparams.jl
-## run the experiment shown in Figure 2, where PI up to peak is assessed for varying
-## θtrue of different outbreak intensities
+#=
+pi-over-true-params.jl
+run the experiment shown in Figure 2, where PI up to peak is assessed for varying
+θtrue of different values of true infection rate β and initial susceptible S₀
+=#
 
-using DiffEqInformationTheory
+using MarginalDivergence
 using ConditionalTransform
 using Distributions, MonteCarloMeasurements
 using NamedTupleTools
@@ -25,7 +27,6 @@ For the given `θtrue`, run the SIR simiulations while holding u = f(`θtrue`) f
 Returns a `Dict` of infection curves for each u
 """
 function solve_inf_cond(θtrue, θprior, lat_mod, obs_times)
-    silent=true
     nsamples=nparticles(lat_mod.β)
     inf_conds = Dict()
 
