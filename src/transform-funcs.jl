@@ -6,7 +6,7 @@ transformation functions for the 5 summary statistics used in the paper
 using LambertW
 using Optim
 using ForwardDiff
-using OrdinaryDiffEq
+# using OrdinaryDiffEq
 
 """
 A `Dict` of functions for each transformation, an inverse, and derivative of the inverse

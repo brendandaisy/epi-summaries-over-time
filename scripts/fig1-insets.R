@@ -30,18 +30,18 @@ posterior_samples <- function(dat, t) {
     dat$ts = 0:t
     
     exec <- cmdstan_model("src/fit-sir.stan")
-    fit <- exec$sample(data=dat)
+    fit <- exec$sample(data=dat, diagnostics=NULL)
     
-    as_draws_df(fit$draws()) |> 
-        as_tibble() |> 
-        select(`α`=alpha, `β`=beta, `S₀`=S0) |> 
+    as_draws_df(fit$draws())
+        as_tibble() |>
+        select(`α`=alpha, `β`=beta, `S₀`=S0) |>
         mutate(
             `rep-number`=rep_number(α, β),
             `outbreak-size`=outbreak_size(α, β, `S₀`),
             `peak-intensity`=peak_intensity(α, β, `S₀`),
             `peak-timing`=read_csv(paste0("data/tpeak-post", t, ".csv"))$V,
             `growth-rate`=growth_rate(α, β, `S₀`),
-        ) |> 
+        ) |>
         pivot_longer(everything(), "var") |>
         mutate(var=fct_relevel(fct_recode(var, !!!texlab), !!!names(texlab)))
 }
@@ -93,6 +93,24 @@ stan_dat <- list(
     y=c(7, 22, 38, 50, 59, 115, 163, 183, 242, 239, 244, 230, 213, 183, 136, 148, 116, 109, 78, 69, 52, 52, 34, 44, 26, 23, 16, 13, 17, 13, 12),
     I0= 0.01
 )
+# stan_dat <- list(
+#     max_t=60,
+#     y=as.matrix(read_csv("ymat_tmp.csv")),
+#     nreps=10,
+#     I0= 0.01
+# )
+
+# ppp <- posterior_samples(stan_dat, 60)
+# ddd <- density(growth_rate(ppp$alpha, ppp$beta, ppp$S0))
+# log(approx(ddd$x, ddd$y, 0.55)$y) - log(0.5)
+# 
+# ggplot(tibble(x=ddd$x, y=ddd$y), aes(x, y)) +
+#     geom_line() +
+#     stat_function(fun=~dnorm(.x, 0.55, sqrt(7.283206484415009e-5 / stan_dat$nreps)), col="red")
+# 
+# library(bayesplot)
+# mcmc_dens(ppp, pars=c("S0")) + theme(axis.text.y=element_text()) +
+#     stat_function(fun=function(x) dnorm(x, 0.6, sqrt(3292.70450647089 / stan_dat$nreps)), col="red")
 
 all_samps <- bind_rows(
     mutate(priors, dist="prior"),
@@ -112,8 +130,6 @@ density_plot_var <- function(var, bounds=c(-Inf, Inf)) {
         labs(x=str_extract(var, "\\$.+\\$"), y=NULL) +
         theme_dens
     
-    # if (idx %% 2 == 0)
-    #     p <- p + theme(plot.background=element_rect(fill="lightblue", color="lightblue"))
     return(p)
 }
 
@@ -121,9 +137,9 @@ theme_dens <- theme_bw() +
     theme(
         strip.background=element_blank(),
         strip.text=element_blank(),
-        axis.text.y=element_blank(),
-        axis.ticks.y=element_blank(),
-        axis.title=element_blank(),
+        # axis.text.y=element_blank(),
+        # axis.ticks.y=element_blank(),
+        # axis.title=element_blank(),
         panel.grid=element_blank(),
         legend.position="none",
         plot.margin=unit(c(0, 0, 0, 0), "in")

@@ -10,8 +10,9 @@ functions {
 data {
     int max_t; // duration of simulation, in days
     int max_obs_t;
+    int nreps;
     real ts[max_obs_t+1]; // time points to evaluate SIR
-    int<lower=0> y[max_t+1]; // cases for each day
+    int<lower=0> y[max_t+1, nreps]; // cases for each day
     real I0;
 }
 
@@ -33,5 +34,6 @@ transformed parameters {
 
 model {
     for (t in 1:(max_obs_t+1))
-      y[t] ~ poisson(1000 * inf_curve[t]);
+      for (r in 1:nreps)
+        y[t, r] ~ poisson(1000 * inf_curve[t]);
 }

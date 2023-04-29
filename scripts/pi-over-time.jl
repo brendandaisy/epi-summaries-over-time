@@ -17,7 +17,7 @@ Load previously sampled θ from P(θ|`varname`) and construct a corresponding `S
 Assumes the previously calculated samples are correct for this setting of θtrue!!!
 """
 function sir_from_samples(varname, M)
-    df = CSV.read("data/cond-samples/samp-$(varname).csv", DataFrame)
+    df = CSV.read("results/cond-samples/samp-$(varname).csv", DataFrame)
 
     ret = SIRModel{Float32}(
         S₀=Particles(Float32.(collect(df.S0))), 
@@ -69,7 +69,7 @@ function exper1_setup(θtrue, θprior, obs_mod; M=60_000)
         inf_conds[var] = solve(sir_cond; save_idxs=2, saveat=1).u # simulate x|u
     end
 
-    Exper1Config(θtrue, θprior, obs_mod, inf_pri, inf_conds, inf_true, y)
+    (;θtrue, θprior, obs_mod, inf_pri, inf_conds, inf_true, y)
 end
 
 """
