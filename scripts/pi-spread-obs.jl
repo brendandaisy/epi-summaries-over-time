@@ -1,3 +1,9 @@
+#=
+pi-spread-obs.jl
+Produce the results from Figure 2 of the main text, where a fixed number of observations
+are placed evenly over different time spans, and both MC and asymptotic approx. are used
+=#
+
 using MarginalDivergence
 using ConditionalTransform
 using Distributions, MonteCarloMeasurements
@@ -54,11 +60,12 @@ function ident_spread_obs(;N=100, M=60_000)
         α=Particles(M, θprior.α)
     )
     sol_pri = solve(lat_mod; save_idxs=2, dense=true, abstol=1f-12, reltol=1f-9)
+    # simulate true and conditionals
     sol_true = solve(lat_mod, θtrue; save_idxs=2, dense=true)
     sol_conds = solve_inf_cond(θtrue, θprior, lat_mod)
 
     ret = []
-    for T in [39, 41]
+    for T in tmax_set
         obs_t = Float32.(range(0, T, num_obs))
         y = observe_dist(obs_mod, sol_true(obs_t).u)
         inf_pri = sol_pri(obs_t).u
@@ -73,20 +80,14 @@ function ident_spread_obs(;N=100, M=60_000)
     return ret
 end
 
-θtrue = (α=0.2f0, β=1.25f0, S₀=0.6f0)
-θprior = (α=Uniform(0.05f0, 0.85f0), β=Uniform(0.3f0, 1.5f0), S₀=Uniform(0.1f0, 0.99f0))
-num_obs = 40
-tmax_set = 1:2:41
-obs_mod = PoissonRate(1000)
-
-# res = ident_spread_obs(N=2000, M=70_000)
-# CSV.write("results/pi-spread-obs.csv", DataFrame(res), append=true)
-
 function solve_adj(θ, obs_t)
     _prob = remake(prob, p=[θ[2], θ[1]], u0=[θ[3], 0.01])
-    solve(_prob, Tsit5(); save_idxs=2, saveat=obs_t, reltol = 1e-6, abstol = 1e-10).u
+    solve(_prob, Tsit5(); save_idxs=2, saveat=obs_t, reltol=1e-6, abstol=1e-10).u
 end
 
+"""
+Return the "JOJ" portion of eq. 16
+"""
 function info_mat(obs_t)
     inf = solve(lm_true; save_idxs=2, saveat=obs_t).u
     O = Diagonal(1000 ./ inf)
@@ -94,9 +95,15 @@ function info_mat(obs_t)
     return J' * O * J
 end
 
-tmax_set = 1:0.5:41
-Frnot = [1 0 0; rnot(θtrue.α, θtrue.β) 0.2 0; 0 0 1]
-# Fgrate = [0.6 -1 1.25; 1 0 0; 0 0 1]
+θtrue = (α=0.2f0, β=1.25f0, S₀=0.6f0)
+θprior = (α=Uniform(0.05f0, 0.85f0), β=Uniform(0.3f0, 1.5f0), S₀=Uniform(0.1f0, 0.99f0))
+num_obs = 40
+tmax_set = 1:2:41
+obs_mod = PoissonRate(1000)
+
+res_monte_carlo = ident_spread_obs(N=2000, M=70_000)
+
+Frnot = [1 0 0; rnot(θtrue.α, θtrue.β) 0.2 0; 0 0 1] # F matrix for eq. 16
 Fgrate = [-1 0.6 1.25; 0 1 0; 0 0 1]
 
 

@@ -1,3 +1,8 @@
+#=
+Script for comparins RMD using the approximation and MC procedure
+Results not used in final manuscript
+=#
+
 using MarginalDivergence
 using Distributions, MonteCarloMeasurements
 using DifferentialEquations
