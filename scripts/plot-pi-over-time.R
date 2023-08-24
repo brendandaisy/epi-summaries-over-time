@@ -1,3 +1,8 @@
+# --------------------------------------------------------------------------------
+# plot-pi-over-time.R-------------------------------------------------------------
+# produce main panels of Figure 1, and combine with insets in a grid--------------
+# --------------------------------------------------------------------------------
+
 library(tidyverse)
 library(ggthemes)
 library(tikzDevice)
@@ -6,6 +11,7 @@ library(cowplot)
 library(grid)
 library(gridExtra)
 
+# function to produce "latexy" pdfs
 tikz_plot <- function(ggp, fname='tikz', w=8.5, h=4, dir="figs") {
     cur_wd <- getwd()
     setwd(paste0(cur_wd, "/", dir))
@@ -36,8 +42,9 @@ md_plot_var <- function(var, idx) {
         )
 }
 
-true_inf <- read_csv("data/inf-true.csv") |> 
+true_inf <- read_csv("results/inf-true.csv") |> 
     mutate(t=seq(0, 30, 0.2))
+
 peak <- which.max(true_inf$inf)
 tsteps <- seq(0, 30, 1)
 
@@ -52,12 +59,12 @@ texlab = c(
     "Growth rate $\\mathcal{G}$"="growth-rate"
 )
 
-res <- read_csv("data/res-pi-over-time.csv", na="missing") |> 
+res <- read_csv("results/res-pi-over-time.csv", na="missing") |> 
     mutate(var=fct_relevel(fct_recode(var, !!!texlab), !!!names(texlab)))
 
 plot_md <- imap(names(texlab), md_plot_var)
 
-# run a separate script to get a list of plots for the insets:
+# run a separate script to get a list of plots for the insets, then add them in corners:
 source("scripts/fig1-insets.R")
 
 md_rows <- map(1:8, ~{
@@ -71,13 +78,15 @@ md_rows <- map(1:8, ~{
     gdraw
 })
 
+# arrange plots in grid and add axis labels
 panel1 <- plot_grid(plotlist=md_rows, align="h", axis="l", nrow=2)
 y_lab <- textGrob("Identifiability $\\delta_u$", rot=90, gp=gpar(fontsize=16))
 x_lab <- textGrob("Days of observation", gp=gpar(fontsize=16))
 panel1 <- grid.arrange(arrangeGrob(panel1, left=y_lab, bottom=x_lab))
 
-##
+tikz_plot(plot_grid(panel1), "increasing-tspan-p1", w=7.95, h=5.44)
 
+# make part A inf. curve as a separate figure:
 inf_pri <- read_csv("data/sim-full-prior.csv") |> 
     mutate(id=1:n()) |> 
     pivot_longer(-id, names_to="t", values_to="inf") |> 
@@ -87,17 +96,7 @@ inf_pri_summ <- inf_pri |>
     group_by(t) |> 
     summarise(ymin=quantile(inf, 0.025), ymax=quantile(inf, 0.975))
 
-panel2 <- 
-    # inf_pri |> 
-    # filter(id %in% sample(max(id), 50)) |> 
-    # ggplot(aes(t, inf)) +
-    # geom_ribbon(
-    #   aes(t, ymin=ymin, ymax=ymax), data=inf_pri_summ, 
-    #   alpha=0.8, col="gray80", fill="gray80", inherit.aes=FALSE
-    # ) +
-    ggplot(true_inf, aes(t, inf)) +
-    # stat_function(fun=~0.01 * exp(.x * (beta_true*Strue - alpha_true)), col="gray30", alpha=0.8, xlim=c(0, 6)) +
-    # geom_line(aes(group=id), alpha=0.2, col="gray30") +
+panel2 <- ggplot(true_inf, aes(t, inf)) +
     annotate("rect", xmin=-1, ymin=0, xmax=6, ymax=0.5, fill="lightblue", alpha=0.35) +
     annotate("rect", xmin=6, ymin=0, xmax=14, ymax=0.5, fill="#f53db5", alpha=0.2) +
     annotate("rect", xmin=14, ymin=0, xmax=31, ymax=0.5, fill="blue4", alpha=0.2) +
@@ -107,12 +106,3 @@ panel2 <-
     labs(x="Days $t$", y="$I(t)$", col=NULL) +
     theme_half_open() +
     theme(plot.margin=unit(c(0, 0, 0, 0.25), "in"))
-
-gg <- plot_grid(
-    plot_grid(NULL, panel2, NULL, ncol=1, rel_heights=c(0.25, 0.5, 0.25), labels=c("", "A", "")),
-    panel1,
-    rel_widths=c(0.33, 0.67),
-    labels=c("", "B")
-)
-
-tikz_plot(plot_grid(panel1), "increasing-tspan-p1", w=7.95, h=5.44)

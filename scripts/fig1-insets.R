@@ -1,3 +1,8 @@
+# --------------------------------------------------------------------------------
+# fig1-insets.R-------------------------------------------------------------------
+# subscript to produce insets to Figure 1-----------------------------------------
+# --------------------------------------------------------------------------------
+
 library(cmdstanr)
 library(posterior)
 library(tidyverse)
@@ -86,31 +91,12 @@ true_vals <- tibble(
     pivot_longer(everything(), "var") |>
     mutate(var=fct_relevel(fct_recode(var, !!!texlab), !!!names(texlab)))
 
-###
-
 stan_dat <- list(
     max_t=30,
     y=c(7, 22, 38, 50, 59, 115, 163, 183, 242, 239, 244, 230, 213, 183, 136, 148, 116, 109, 78, 69, 52, 52, 34, 44, 26, 23, 16, 13, 17, 13, 12),
-    I0= 0.01
+    I0= 0.01,
+    nreps=1
 )
-# stan_dat <- list(
-#     max_t=60,
-#     y=as.matrix(read_csv("ymat_tmp.csv")),
-#     nreps=10,
-#     I0= 0.01
-# )
-
-# ppp <- posterior_samples(stan_dat, 60)
-# ddd <- density(growth_rate(ppp$alpha, ppp$beta, ppp$S0))
-# log(approx(ddd$x, ddd$y, 0.55)$y) - log(0.5)
-# 
-# ggplot(tibble(x=ddd$x, y=ddd$y), aes(x, y)) +
-#     geom_line() +
-#     stat_function(fun=~dnorm(.x, 0.55, sqrt(7.283206484415009e-5 / stan_dat$nreps)), col="red")
-# 
-# library(bayesplot)
-# mcmc_dens(ppp, pars=c("S0")) + theme(axis.text.y=element_text()) +
-#     stat_function(fun=function(x) dnorm(x, 0.6, sqrt(3292.70450647089 / stan_dat$nreps)), col="red")
 
 all_samps <- bind_rows(
     mutate(priors, dist="prior"),
@@ -120,7 +106,6 @@ all_samps <- bind_rows(
     mutate(dist=fct_inorder(dist))
 
 density_plot_var <- function(var, bounds=c(-Inf, Inf)) {
-    
     p <- all_samps |> 
         filter(var == !!var) |> 
         ggplot(aes(value, group=dist, col=dist)) +
@@ -160,11 +145,3 @@ plot_dens[[3]] <- plot_dens[[3]] + scale_x_continuous(breaks=c(0.1, 0.5, 0.9))
 plot_dens[[5]] <- plot_dens[[5]] + scale_x_continuous(breaks=c(0, 0.5, 1))
 plot_dens[[6]] <- plot_dens[[6]] + scale_x_continuous(breaks=c(0, 0.4, 0.8))
 plot_dens[[8]] <- plot_dens[[8]] + scale_x_continuous(breaks=c(-0.5, 0.25, 1))
-
-# plot_dens <- ggplot(all_samps, aes(value, col=var, group=dist)) +
-#     geom_density(size=1.3, adjust=1.5, alpha=0.7) +
-#     geom_vline(aes(xintercept=value), col="orange", data=true_vals, linetype="dashed", size=1.3) +
-#     facet_wrap(~var, scales="free", nrow=1) +
-#     # coord_cartesian(expand=FALSE) +
-#     labs(x=NULL, y="Density") +
-#     theme_dens
