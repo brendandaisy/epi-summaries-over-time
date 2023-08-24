@@ -44,7 +44,7 @@ posterior_samples <- function(dat, t) {
             `rep-number`=rep_number(α, β),
             `outbreak-size`=outbreak_size(α, β, `S₀`),
             `peak-intensity`=peak_intensity(α, β, `S₀`),
-            `peak-timing`=read_csv(paste0("data/tpeak-post", t, ".csv"))$V,
+            `peak-timing`=read_csv(paste0("results/tpeak-post", t, ".csv"))$V,
             `growth-rate`=growth_rate(α, β, `S₀`),
         ) |>
         pivot_longer(everything(), "var") |>
